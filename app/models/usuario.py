@@ -11,4 +11,3 @@ class Usuario(db.Model):
     atualizado_em = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     enderecos = db.relationship("Endereco", back_populates="usuario", lazy=True)
-    cartoes = db.relationship("Cartao", back_populates="usuario", lazy=True)

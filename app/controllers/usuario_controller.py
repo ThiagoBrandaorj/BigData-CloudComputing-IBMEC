@@ -8,9 +8,19 @@ usuario_bp = Blueprint("usuario", __name__)
 def criar_usuario():
     dados = request.json
 
+    # Validações iniciais
     if not dados.get("nome") or not dados.get("email"):
         return jsonify({"erro": "Nome e email são obrigatórios"}), 400
 
+    # Verificar se email já existe
+    if Usuario.query.filter_by(email=dados["email"]).first():
+        return jsonify({"erro": "Email já cadastrado"}), 400
+
+    # Verificar se CPF já existe (se fornecido)
+    if "cpf" in dados and dados["cpf"] and Usuario.query.filter_by(cpf=dados["cpf"]).first():
+        return jsonify({"erro": "CPF já cadastrado"}), 400
+
+    # Só cria o objeto depois de todas as validações
     novo_usuario = Usuario(
         nome=dados["nome"],
         email=dados["email"],
@@ -19,10 +29,13 @@ def criar_usuario():
         telefone=dados.get("telefone")
     )
 
-    db.session.add(novo_usuario)
-    db.session.commit()
-
-    return jsonify({"mensagem": "Usuário criado com sucesso!", "id": novo_usuario.id}), 201
+    try:
+        db.session.add(novo_usuario)
+        db.session.commit()
+        return jsonify({"mensagem": "Usuário criado com sucesso!", "id": novo_usuario.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"erro": "Erro ao salvar usuário no banco de dados"}), 500
 
 
 # Buscar todos os usuários
