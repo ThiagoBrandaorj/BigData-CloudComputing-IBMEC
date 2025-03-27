@@ -3,6 +3,7 @@ from app.database import db
 from app.config import Config
 from app.controllers.usuario_controller import usuario_bp
 from app.controllers.endereco_controller import endereco_bp
+from app.controllers.cartao_controller import cartao_bp
 
 def create_app():
     app = Flask(__name__)
@@ -12,5 +13,6 @@ def create_app():
 
     app.register_blueprint(usuario_bp, url_prefix="/usuario")
     app.register_blueprint(endereco_bp, url_prefix="/endereco")
+    app.register_blueprint(cartao_bp, url_prefix="/cartao")
 
     return app
