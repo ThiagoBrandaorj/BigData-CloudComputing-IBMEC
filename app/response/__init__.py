@@ -1,0 +1,1 @@
+# Arquivo __init__.py vazio para que a pasta response seja reconhecida como um pacote Python 

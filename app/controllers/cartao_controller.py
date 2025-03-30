@@ -3,7 +3,7 @@ from app.database import db
 from app.models.usuario import Usuario
 from app.models.cartao import Cartao
 from app.request.transacao_request import TransacaoRequest
-from app.request.transacao_response import TransacaoResponse
+from app.response.transacao_response import TransacaoResponse
 from datetime import datetime
 import uuid
 from decimal import Decimal
