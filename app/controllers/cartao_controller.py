@@ -4,7 +4,7 @@ from app.models.usuario import Usuario
 from app.models.cartao import Cartao
 from app.request.transacao_request import TransacaoRequest
 from app.request.transacao_response import TransacaoResponse
-from datetime import datetime, UTC
+from datetime import datetime
 import uuid
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
@@ -52,7 +52,7 @@ def authorize_transaction(id_user):
             return jsonify(TransacaoResponse(
                 status="NOT_AUTHORIZED",
                 codigo_autorizacao=None,
-                dt_transacao=datetime.now(UTC),
+                dt_transacao=datetime.utcnow(),
                 message="Usuário não encontrado"
             ).model_dump()), 404
 
@@ -62,7 +62,7 @@ def authorize_transaction(id_user):
             return jsonify(TransacaoResponse(
                 status="NOT_AUTHORIZED",
                 codigo_autorizacao=None,
-                dt_transacao=datetime.now(UTC),
+                dt_transacao=datetime.utcnow(),
                 message="Cartão não encontrado"
             ).model_dump()), 404
         
@@ -71,11 +71,11 @@ def authorize_transaction(id_user):
         validade_requisicao = datetime(ano, mes, 1) + relativedelta(day=31)
 
         # Verificar se o cartão está expirado
-        if cartao.validade < datetime.now():
+        if cartao.validade < datetime.utcnow():
             return jsonify(TransacaoResponse(
                 status="NOT_AUTHORIZED",
                 codigo_autorizacao=None,
-                dt_transacao=datetime.now(),
+                dt_transacao=datetime.utcnow(),
                 message="Cartão expirado"
             ).model_dump()), 400
         
@@ -84,7 +84,7 @@ def authorize_transaction(id_user):
             return jsonify(TransacaoResponse(
                 status="NOT_AUTHORIZED",
                 codigo_autorizacao=None,
-                dt_transacao=datetime.now(),
+                dt_transacao=datetime.utcnow(),
                 message="Validade incorreta"
             ).model_dump()), 400
 
@@ -93,7 +93,7 @@ def authorize_transaction(id_user):
             return jsonify(TransacaoResponse(
                 status="NOT_AUTHORIZED",
                 codigo_autorizacao=None,
-                dt_transacao=datetime.now(UTC),
+                dt_transacao=datetime.utcnow(),
                 message="Saldo insuficiente"
             ).model_dump()), 400
 
@@ -105,7 +105,7 @@ def authorize_transaction(id_user):
         return jsonify(TransacaoResponse(
             status="AUTHORIZED",
             codigo_autorizacao=uuid.uuid4(),
-            dt_transacao=datetime.now(UTC),
+            dt_transacao=datetime.utcnow(),
             message="Compra autorizada"
         ).model_dump()), 200
 
