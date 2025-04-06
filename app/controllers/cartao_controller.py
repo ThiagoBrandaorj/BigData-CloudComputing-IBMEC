@@ -125,8 +125,8 @@ def update_saldo(id_cartao):
         if not cartao:
             return jsonify({"message": "Cartão não encontrado"}), 404
         
-        # Atualiza o saldo do cartão
-        cartao.saldo = Decimal(str(data['saldo']))
+        # Soma o novo valor ao saldo atual do cartão
+        cartao.saldo += Decimal(str(data['saldo']))
         db.session.commit()
         
         return jsonify({
