@@ -112,3 +112,45 @@ def authorize_transaction(id_user):
     except Exception as e:
         return jsonify({"status": "ERROR", "message": str(e)}), 500
 
+# Atualizar o saldo de um cartão
+@cartao_bp.route("/saldo/<int:id_cartao>", methods=["PUT"])
+def update_saldo(id_cartao):
+    try:
+        data = request.get_json()
+        
+        if 'saldo' not in data:
+            return jsonify({"message": "O campo 'saldo' é obrigatório"}), 400
+            
+        cartao = Cartao.query.get(id_cartao)
+        if not cartao:
+            return jsonify({"message": "Cartão não encontrado"}), 404
+        
+        # Atualiza o saldo do cartão
+        cartao.saldo = Decimal(str(data['saldo']))
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Saldo atualizado com sucesso",
+            "cartao_id": cartao.id,
+            "saldo": float(cartao.saldo)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"status": "ERROR", "message": str(e)}), 500
+        
+# Deletar um cartão
+@cartao_bp.route("/<int:id_cartao>", methods=["DELETE"])
+def delete_cartao(id_cartao):
+    try:
+        cartao = Cartao.query.get(id_cartao)
+        if not cartao:
+            return jsonify({"message": "Cartão não encontrado"}), 404
+            
+        db.session.delete(cartao)
+        db.session.commit()
+        
+        return jsonify({"message": "Cartão deletado com sucesso"}), 200
+        
+    except Exception as e:
+        return jsonify({"status": "ERROR", "message": str(e)}), 500
+
