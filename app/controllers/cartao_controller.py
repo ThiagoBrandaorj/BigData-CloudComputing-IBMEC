@@ -12,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 cartao_bp = Blueprint("cartao", __name__)
 
 # Criar um novo cartão
-@cartao_bp.route("/<int:id_user>", methods=["POST"])
+@cartao_bp.route("usuario/<int:id_user>", methods=["POST"])
 def create_cartao(id_user):
     data = request.get_json()
 
@@ -41,7 +41,7 @@ def create_cartao(id_user):
 
 
 # Autorizar uma transação
-@cartao_bp.route("/authorize/<int:id_user>", methods=["POST"])
+@cartao_bp.route("/authorize/usuario/<int:id_user>", methods=["POST"])
 def authorize_transaction(id_user):
     try:
         data = request.get_json()

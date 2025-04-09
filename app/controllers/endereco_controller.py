@@ -5,10 +5,9 @@ from app.models.usuario import Usuario
 
 endereco_bp = Blueprint("endereco", __name__)
 
-@endereco_bp.route("", methods=["POST"])
-def criar_endereco():
+@endereco_bp.route("/usuario/<int:usuario_id>", methods=["POST"])
+def criar_endereco(usuario_id):
     dados = request.json
-    usuario_id = dados.get("usuario_id")
     
     if not Usuario.query.get(usuario_id):
         return jsonify({"erro": "Usuário não encontrado"}), 404
