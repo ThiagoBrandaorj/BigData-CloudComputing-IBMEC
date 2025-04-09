@@ -179,3 +179,36 @@ def delete_cartao(id_cartao):
     except Exception as e:
         return jsonify({"status": "ERROR", "message": str(e)}), 500
 
+@cartao_bp.route("/usuario/<int:id_user>", methods=["GET"])
+def listar_cartoes_usuario(id_user):
+    try:
+        usuario = Usuario.query.get(id_user)
+        if not usuario:
+            return jsonify({"erro": "Usuário não encontrado"}), 404
+            
+        cartoes = Cartao.query.filter_by(usuario_id=id_user).all()
+        if not cartoes:
+            return jsonify({"erro": "Nenhum cartão encontrado para este usuário"}), 404
+            
+        resultado = []
+        for cartao in cartoes:
+            mes = cartao.validade.month
+            ano = cartao.validade.year
+            validade_formatada = f"{mes:02d}/{ano}"
+            
+            resultado.append({
+                "id": cartao.id,
+                "numero": cartao.numero,
+                "nome_impresso": cartao.nome_impresso,
+                "validade": validade_formatada,
+                "cvv": cartao.cvv,
+                "bandeira": cartao.bandeira,
+                "tipo": cartao.tipo,
+                "saldo": float(cartao.saldo)
+            })
+            
+        return jsonify(resultado), 200
+            
+    except Exception as e:
+        return jsonify({"erro": "Erro ao listar cartões"}), 500
+
