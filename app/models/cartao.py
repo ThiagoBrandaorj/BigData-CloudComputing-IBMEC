@@ -3,7 +3,7 @@ from app.database import db
 class Cartao(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey("usuario.id"), nullable=False)
-    numero = db.Column(db.String(16), nullable=False, unique=True)
+    numero = db.Column(db.String(16), nullable=False)
     nome_impresso = db.Column(db.String(100), nullable=False)
     validade = db.Column(db.DateTime, nullable=False)
     cvv = db.Column(db.String(4), nullable=False)

@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_migrate import Migrate
 from app.database import db
 from app.config import Config
 from app.controllers.usuario_controller import usuario_bp
@@ -11,6 +12,7 @@ def create_app():
     app.config.from_object(Config)
 
     db.init_app(app)
+    migrate = Migrate(app, db)
 
     app.register_blueprint(usuario_bp, url_prefix="/usuario")
     app.register_blueprint(endereco_bp, url_prefix="/endereco")
