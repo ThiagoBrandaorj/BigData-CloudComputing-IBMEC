@@ -292,9 +292,9 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
 }
 ```
 
-### Obter Produtos por Categoria
+### Obter Produtos 
 - **Método**: GET
-- **Endpoint**: `/produto/categoria/{categoria}`
+- **Endpoint**: `/produto`
 - **Resposta de Sucesso**:
 ```json
 [
