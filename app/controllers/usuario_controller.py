@@ -83,6 +83,9 @@ def editar_usuario(usuario_id):
         return jsonify({"erro": "Usuário não encontrado"}), 404
 
     dados = request.json
+    if not dados:
+        return jsonify({"erro": "O corpo da requisição não pode estar vazio"}), 400
+
     usuario.nome = dados.get("nome", usuario.nome)
     usuario.email = dados.get("email", usuario.email)
     usuario.dt_nascimento = dados.get("dt_nascimento", usuario.dt_nascimento)

@@ -12,32 +12,53 @@ from dateutil.relativedelta import relativedelta
 cartao_bp = Blueprint("cartao", __name__)
 
 # Criar um novo cartão
-@cartao_bp.route("usuario/<int:id_user>", methods=["POST"])
+@cartao_bp.route("/usuario/<int:id_user>", methods=["POST"])
 def create_cartao(id_user):
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"erro": "O corpo da requisição não pode estar vazio"}), 400
 
-    usuario = Usuario.query.get(id_user)
-    if not usuario:
-        return jsonify({"message": "Usuário não encontrado"}), 404
-    
-    mes, ano = map(int, data["validade"].split("/"))
-    validade = datetime(ano, mes, 1) + relativedelta(day=31)
+        usuario = Usuario.query.get(id_user)
+        if not usuario:
+            return jsonify({"erro": "Usuário não encontrado"}), 404
+        
+        # Validar campos obrigatórios
+        campos_obrigatorios = ["numero", "nome_impresso", "validade", "cvv", "bandeira"]
+        for campo in campos_obrigatorios:
+            if not data.get(campo):
+                return jsonify({"erro": f"O campo '{campo}' é obrigatório"}), 400
+        
+        # Verificar se já existe um cartão com o mesmo número
+        cartao_existente = Cartao.query.filter_by(numero=data["numero"]).first()
+        if cartao_existente:
+            return jsonify({"erro": "Já existe um cartão cadastrado com este número"}), 400
+        
+        mes, ano = map(int, data["validade"].split("/"))
+        validade = datetime(ano, mes, 1) + relativedelta(day=31)
 
-    novo_cartao = Cartao(
-        usuario_id=id_user,
-        numero=data["numero"],
-        nome_impresso=data["nome_impresso"],
-        validade=validade,
-        cvv=data["cvv"],
-        bandeira=data["bandeira"],
-        tipo=data.get("tipo", ""),
-        saldo=data.get("saldo", 0.00),
-    )
+        novo_cartao = Cartao(
+            usuario_id=id_user,
+            numero=data["numero"],
+            nome_impresso=data["nome_impresso"],
+            validade=validade,
+            cvv=data["cvv"],
+            bandeira=data["bandeira"],
+            tipo=data.get("tipo", ""),
+            saldo=data.get("saldo", 0.00),
+        )
 
-    db.session.add(novo_cartao)
-    db.session.commit()
+        db.session.add(novo_cartao)
+        db.session.commit()
 
-    return jsonify({"message": "Cartão criado com sucesso", "cartao_id": novo_cartao.id}), 201
+        return jsonify({"mensagem": "Cartão criado com sucesso", "cartao_id": novo_cartao.id}), 201
+        
+    except ValueError:
+        return jsonify({"erro": "Formato de data inválido. Use o formato MM/AAAA"}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"erro": "Erro ao criar cartão"}), 500
 
 
 # Autorizar uma transação
