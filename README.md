@@ -2,6 +2,11 @@
 
 API de e-commerce desenvolvida para a disciplina de Big Data e Cloud Computing do IBMEC.
 
+## Grupo
+- Guilherme Duran Duran Gea
+- Pedro de Castro 
+- Thiago Correa Brandão
+
 ## Arquitetura
 
 A aplicação utiliza uma arquitetura híbrida de armazenamento:
