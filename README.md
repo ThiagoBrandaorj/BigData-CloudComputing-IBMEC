@@ -28,7 +28,7 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
 {
     "nome": "João Silva",
     "email": "joao@exemplo.com",
-    "senha": "senha123",
+    "dt_nascimento": "204-12-20",
     "cpf": "12345678900",
     "telefone": "11987654321"
 }
@@ -41,7 +41,7 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
 }
 ```
 
-### Obter Usuário
+### Obter Usuário por Id
 - **Método**: GET
 - **Endpoint**: `/usuario/{id}`
 - **Resposta de Sucesso**:
@@ -50,6 +50,27 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
     "id": 1,
     "nome": "João Silva",
     "email": "joao@exemplo.com",
+    "cpf": "12345678900",
+    "telefone": "11987654321"
+}
+```
+
+### Obter Usuários
+- **Método**: GET
+- **Endpoint**: `/usuario`
+- **Resposta de Sucesso**:
+```json
+{
+    "id": 1,
+    "nome": "João Silva",
+    "email": "joao@exemplo.com",
+    "cpf": "12345678900",
+    "telefone": "11987654321"
+},
+{
+    "id": 2,
+    "nome": "Maria Silva",
+    "email": "maria@exemplo.com",
     "cpf": "12345678900",
     "telefone": "11987654321"
 }
@@ -87,17 +108,18 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
 
 ### Criar Endereço
 - **Método**: POST
-- **Endpoint**: `/endereco/{id_user}`
+- **Endpoint**: `/endereco/usuario/{id_user}`
 - **Corpo da Requisição**:
 ```json
 {
-    "logradouro": "Rua Exemplo",
-    "numero": "123",
-    "complemento": "Apto 45",
-    "bairro": "Centro",
-    "cidade": "São Paulo",
-    "estado": "SP",
-    "cep": "01234567"
+    "logradouro": "Estrada dos Três Rios 1200",
+    "complemento": "",
+    "bairro": "Freguesia",
+    "cidade": "Rio de Janeiro",
+    "uf": "RJ",
+    "cep": "22745003",
+    "pais": "Brasil",
+    "tipo": "Comercial"
 }
 ```
 - **Resposta de Sucesso**:
@@ -110,7 +132,7 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
 
 ### Obter Endereços do Usuário
 - **Método**: GET
-- **Endpoint**: `/endereco/{id_user}`
+- **Endpoint**: `/endereco/usuario/{id_user}`
 - **Resposta de Sucesso**:
 ```json
 [
@@ -134,7 +156,6 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
 ```json
 {
     "logradouro": "Avenida Atualizada",
-    "numero": "456",
     "bairro": "Novo Bairro",
     "cidade": "Rio de Janeiro",
     "estado": "RJ",
@@ -162,7 +183,7 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
 
 ### Criar Cartão
 - **Método**: POST
-- **Endpoint**: `/cartao/{id_user}`
+- **Endpoint**: `/cartao/usuario/{id_user}`
 - **Corpo da Requisição**:
 ```json
 {
@@ -185,7 +206,7 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
 
 ### Autorizar Transação
 - **Método**: POST
-- **Endpoint**: `/cartao/authorize/{id_user}`
+- **Endpoint**: `/cartao/authorize/usuario/{id_user}`
 - **Corpo da Requisição**:
 ```json
 {
