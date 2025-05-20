@@ -45,6 +45,17 @@ def buscar_produto_por_id(produto_id):
 
     return jsonify(produtos[0]), 200
 
+# Buscar produto por Nome
+@produto_bp.route("/nome/<string:nome>", methods=["GET"])
+def buscar_produto_por_nome(nome):
+    query = f"SELECT * FROM produtos p WHERE p.nome = '{nome}'"
+    produtos = list(container.query_items(query=query, enable_cross_partition_query=True))
+
+    if not produtos:
+        return jsonify({"erro": "Produto não encontrado"}), 404
+
+    return jsonify(produtos[0]), 200
+
 
 # Editar um produto
 @produto_bp.route("/<string:produto_id>", methods=["PUT"])
