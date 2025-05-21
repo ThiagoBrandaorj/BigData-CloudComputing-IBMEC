@@ -12,3 +12,4 @@ class Usuario(db.Model):
 
     enderecos = db.relationship("Endereco", back_populates="usuario", lazy=True)
     cartoes = db.relationship("Cartao", back_populates="usuario", lazy=True)
+    pedidos = db.relationship("Pedido", back_populates="usuario", lazy=True)
