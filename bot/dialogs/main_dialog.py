@@ -27,6 +27,7 @@ from api.product_api import ProductAPI
 from dialogs.consultar_pedido_dialog import ConsultarPedidoDialog
 from dialogs.consultar_produtos_dialog import ConsultarProdutoDialog
 from dialogs.extrato_compra_dialog import ExtratoCompraDialog
+from dialogs.comprar_produto_dialog import ComprarProdutoDialog
 
 
 class MainDialog(ComponentDialog):
@@ -44,6 +45,9 @@ class MainDialog(ComponentDialog):
 
         #Area de atendimento de consultar produtos
         self.add_dialog(ConsultarProdutoDialog())
+
+        #Area de atendimento para compra de produtos
+        self.add_dialog(ComprarProdutoDialog())
         
         #Area de atendimento de extrato de compras
         self.add_dialog(ExtratoCompraDialog())
@@ -70,7 +74,7 @@ class MainDialog(ComponentDialog):
             ChoicePrompt.__name__,
             PromptOptions(
                 prompt=MessageFactory.text("Escolha a opção desejada:"),
-                choices=[Choice("Consultar Pedidos"), Choice("Consultar Produtos"), Choice("Extrato de Compras")],
+                choices=[Choice("Consultar Pedidos"), Choice("Consultar Produtos"), Choice("Comprar Produto"), Choice("Extrato de Compras")],
             ),
         )
 
@@ -84,6 +88,8 @@ class MainDialog(ComponentDialog):
             return await step_context.begin_dialog("ConsultarPedidoDialog")
         elif choice == "Consultar Produtos":
             return await step_context.begin_dialog("ConsultarProdutoDialog")
+        elif choice == "Comprar Produto":
+            return await step_context.begin_dialog("ComprarProdutoDialog")
         elif choice == "Extrato de Compras":
             return await step_context.begin_dialog("ExtratoCompraDialog")
         
