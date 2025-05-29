@@ -39,7 +39,7 @@ def buscar_pedido_por_id(id_pedido):
 @pedido_bp.route("/nome/<string:nome_cliente>", methods=["GET"])
 def listar_pedidos_por_nome(nome_cliente):
     pedidos = Pedido.query.filter(
-        Pedido.nome_cliente.ilike(f"%{nome_cliente}%")
+        Pedido.nome_cliente == nome_cliente
     ).all()
 
     return jsonify([

@@ -1,7 +1,7 @@
 import os
 
 class Config:
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "mysql+pymysql://root:004517@localhost/ecommerce")
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "mysql+pymysql://root:admin@localhost/ecommerce")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     AZURE_COSMOS_URI = "https://localhost:8081"

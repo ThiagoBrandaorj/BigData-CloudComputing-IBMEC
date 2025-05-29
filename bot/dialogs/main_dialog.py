@@ -20,6 +20,7 @@ from botbuilder.schema import (
     HeroCard,
     CardAction,
     CardImage,
+    SuggestedActions,
 )
 from botbuilder.dialogs.choices import Choice
 from botbuilder.core import MessageFactory, UserState
@@ -60,10 +61,10 @@ class MainDialog(ComponentDialog):
                 [
                     self.prompt_option_step,
                     self.process_option_step,
+                    self.show_options_step,
                 ],
             )
         )
-
 
         self.initial_dialog_id = "MainDialog"
 
@@ -81,7 +82,6 @@ class MainDialog(ComponentDialog):
     async def process_option_step(
         self, step_context: WaterfallStepContext
     ) -> DialogTurnResult:
-        
         choice = step_context.result.value
         
         if choice == "Consultar Pedidos":
@@ -93,16 +93,47 @@ class MainDialog(ComponentDialog):
         elif choice == "Extrato de Compras":
             return await step_context.begin_dialog("ExtratoCompraDialog")
         
-        return await step_context.end_dialog()
+        return await step_context.next(None)
+
+    async def show_options_step(
+        self, step_context: WaterfallStepContext
+    ) -> DialogTurnResult:
+        # Mostrar as opções disponíveis após cada interação
+        await self.show_options(step_context.context)
+        return await step_context.replace_dialog(self.initial_dialog_id)
+
+    async def show_options(self, turn_context):
+        """Mostra as opções disponíveis para o usuário"""
+        reply = MessageFactory.suggested_actions(
+            actions=[
+                CardAction(
+                    title="Consultar Pedidos",
+                    type=ActionTypes.im_back,
+                    value="Consultar Pedidos"
+                ),
+                CardAction(
+                    title="Consultar Produtos",
+                    type=ActionTypes.im_back,
+                    value="Consultar Produtos"
+                ),
+                CardAction(
+                    title="Comprar Produto",
+                    type=ActionTypes.im_back,
+                    value="Comprar Produto"
+                ),
+                CardAction(
+                    title="Extrato de Compras",
+                    type=ActionTypes.im_back,
+                    value="Extrato de Compras"
+                )
+            ]
+        )
+        await turn_context.send_activity(reply)
     
-    async def show_card_produto(self ,turn_context):
-        
+    async def show_card_produto(self, turn_context):
         produto_api = ProductAPI()
-
         response = produto_api.consultar_api()
-        print(response)
-
-        #Chamada de API para obter os produtos
+        
         card = CardFactory.hero_card(
             HeroCard(
                 title=response["nome"],
@@ -119,3 +150,5 @@ class MainDialog(ComponentDialog):
             )
         )
         await turn_context.send_activity(MessageFactory.attachment(card))
+        # Mostrar opções após exibir o card
+        await self.show_options(turn_context)
