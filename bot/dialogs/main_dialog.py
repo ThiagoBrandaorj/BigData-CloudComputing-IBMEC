@@ -1,4 +1,5 @@
-from botbuilder.core import CardFactory
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 
 from botbuilder.dialogs import (
     ComponentDialog,
@@ -15,58 +16,52 @@ from botbuilder.dialogs.prompts import (
     PromptOptions,
     PromptValidatorContext,
 )
+from botbuilder.dialogs.choices import Choice
+from botbuilder.core import MessageFactory, UserState
+
+from api.product_api import ProductAPI
 from botbuilder.schema import (
     ActionTypes,
     HeroCard,
     CardAction,
     CardImage,
-    SuggestedActions,
 )
-from botbuilder.dialogs.choices import Choice
-from botbuilder.core import MessageFactory, UserState
-from api.product_api import ProductAPI
-from dialogs.consultar_pedido_dialog import ConsultarPedidoDialog
+
+from botbuilder.core import CardFactory
 from dialogs.consultar_produtos_dialog import ConsultarProdutoDialog
+from dialogs.consultar_pedido_dialog import ConsultarPedidoDialog
 from dialogs.extrato_compra_dialog import ExtratoCompraDialog
-from dialogs.comprar_produto_dialog import ComprarProdutoDialog
 
 
 class MainDialog(ComponentDialog):
     def __init__(self, user_state: UserState):
-        super(MainDialog, self).__init__("MainDialog")
+        super(MainDialog, self).__init__(MainDialog.__name__)
 
         self.user_state = user_state
 
-        #Prompt para escolha das opções
-        self.add_dialog(ChoicePrompt(ChoicePrompt.__name__))
-        self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__))
+        #Area de atendimento de consultar produtos
+        self.add_dialog(ConsultarProdutoDialog(user_state))
 
-        #Area de atendimento de consultar pedidos  
+        #Area de atendimento de consultar pedidos
         self.add_dialog(ConsultarPedidoDialog())
 
-        #Area de atendimento de consultar produtos
-        self.add_dialog(ConsultarProdutoDialog())
-
-        #Area de atendimento para compra de produtos
-        self.add_dialog(ComprarProdutoDialog())
-        
         #Area de atendimento de extrato de compras
         self.add_dialog(ExtratoCompraDialog())
 
-        # Prompt para escolha de opções
-        # Tratamento das opções de escolha do usuário
         self.add_dialog(
             WaterfallDialog(
-                "MainDialog",
+                WaterfallDialog.__name__,
                 [
                     self.prompt_option_step,
-                    self.process_option_step,
-                    self.show_options_step,
+                    self.process_option_step
                 ],
             )
         )
 
-        self.initial_dialog_id = "MainDialog"
+        self.add_dialog(ChoicePrompt(ChoicePrompt.__name__))
+        self.add_dialog(ConfirmPrompt(ConfirmPrompt.__name__))
+
+        self.initial_dialog_id = WaterfallDialog.__name__
 
     async def prompt_option_step(
         self, step_context: WaterfallStepContext
@@ -75,80 +70,22 @@ class MainDialog(ComponentDialog):
             ChoicePrompt.__name__,
             PromptOptions(
                 prompt=MessageFactory.text("Escolha a opção desejada:"),
-                choices=[Choice("Consultar Pedidos"), Choice("Consultar Produtos"), Choice("Comprar Produto"), Choice("Extrato de Compras")],
+                choices=[Choice("Consultar Pedidos"), Choice("Consultar Produtos"), Choice("Extrato de Compras")],
             ),
         )
 
-    async def process_option_step(
-        self, step_context: WaterfallStepContext
-    ) -> DialogTurnResult:
-        choice = step_context.result.value
+    async def process_option_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         
-        if choice == "Consultar Pedidos":
+        option = step_context.result.value
+
+        if option == "Consultar Pedidos":
+            #Iniciando um novo dialog para consultar pedidos
             return await step_context.begin_dialog("ConsultarPedidoDialog")
-        elif choice == "Consultar Produtos":
+        elif option == "Consultar Produtos":
+            #Iniciando um novo dialog para consultar produtos
             return await step_context.begin_dialog("ConsultarProdutoDialog")
-        elif choice == "Comprar Produto":
-            return await step_context.begin_dialog("ComprarProdutoDialog")
-        elif choice == "Extrato de Compras":
+        elif option == "Extrato de Compras":
+            #Iniciando um novo dialog para Extrato de Compras
             return await step_context.begin_dialog("ExtratoCompraDialog")
-        
-        return await step_context.next(None)
 
-    async def show_options_step(
-        self, step_context: WaterfallStepContext
-    ) -> DialogTurnResult:
-        # Mostrar as opções disponíveis após cada interação
-        await self.show_options(step_context.context)
-        return await step_context.replace_dialog(self.initial_dialog_id)
-
-    async def show_options(self, turn_context):
-        """Mostra as opções disponíveis para o usuário"""
-        reply = MessageFactory.suggested_actions(
-            actions=[
-                CardAction(
-                    title="Consultar Pedidos",
-                    type=ActionTypes.im_back,
-                    value="Consultar Pedidos"
-                ),
-                CardAction(
-                    title="Consultar Produtos",
-                    type=ActionTypes.im_back,
-                    value="Consultar Produtos"
-                ),
-                CardAction(
-                    title="Comprar Produto",
-                    type=ActionTypes.im_back,
-                    value="Comprar Produto"
-                ),
-                CardAction(
-                    title="Extrato de Compras",
-                    type=ActionTypes.im_back,
-                    value="Extrato de Compras"
-                )
-            ]
-        )
-        await turn_context.send_activity(reply)
-    
-    async def show_card_produto(self, turn_context):
-        produto_api = ProductAPI()
-        response = produto_api.consultar_api()
-        
-        card = CardFactory.hero_card(
-            HeroCard(
-                title=response["nome"],
-                text=f"Preço: R$ {response['preco']}",
-                subtitle=response["descricao"],
-                images=[CardImage(url=response["urlImagem"][0])],
-                buttons=[
-                    CardAction(
-                        type=ActionTypes.im_back,
-                        title="Comprar Produto",
-                        value=response["id"],
-                    ),
-                ],
-            )
-        )
-        await turn_context.send_activity(MessageFactory.attachment(card))
-        # Mostrar opções após exibir o card
-        await self.show_options(turn_context)
+        return await step_context.end_dialog()

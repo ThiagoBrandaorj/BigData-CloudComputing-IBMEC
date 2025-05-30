@@ -1,16 +1,17 @@
 from botbuilder.dialogs import ComponentDialog, WaterfallDialog, WaterfallStepContext
-from botbuilder.core import MessageFactory
+from botbuilder.core import MessageFactory, CardFactory
 from botbuilder.dialogs.prompts import TextPrompt, PromptOptions
+from botbuilder.schema import HeroCard, CardImage, CardAction, ActionTypes
 from api.order_api import OrderAPI
-from datetime import datetime, timezone
+from api.product_api import ProductAPI
 
-datetime.now(timezone.utc)
 
 class ConsultarPedidoDialog(ComponentDialog):
     def __init__(self):
         super(ConsultarPedidoDialog, self).__init__("ConsultarPedidoDialog")
 
         self.order_api = OrderAPI()
+        self.product_api = ProductAPI()
         self.add_dialog(TextPrompt("namePrompt"))
 
         self.add_dialog(
@@ -28,22 +29,48 @@ class ConsultarPedidoDialog(ComponentDialog):
     async def prompt_user_name_step(self, step_context: WaterfallStepContext):
         return await step_context.prompt(
             "namePrompt",
-            PromptOptions(prompt=MessageFactory.text("Digite seu nome completo para consultar seus pedidos:"))
+            PromptOptions(prompt=MessageFactory.text("Digite o número do pedido que deseja consultar:"))
         )
 
     async def show_orders_step(self, step_context: WaterfallStepContext):
-        user_name = step_context.result
-        pedidos = self.order_api.consultar_pedidos_por_usuario(user_name)
+        id_pedido = step_context.result
+        pedidos = self.order_api.consultar_pedidos_por_id_pedido(id_pedido)
 
-        if pedidos and isinstance(pedidos, list):
-            for pedido in pedidos:
-                detalhes = f"🛒 **Pedido #{pedido['id']} - {pedido['data']}**\n"
-                detalhes += f"- Produto: {pedido['produto']}\n"
-                detalhes += f"- Valor: R$ {pedido['valor']:.2f}\n"
-                detalhes += f"- Status: {pedido['status']}\n"
-                await step_context.context.send_activity(MessageFactory.text(detalhes, None, "markdown"))
+        if pedidos and isinstance(pedidos, list) and len(pedidos) > 0:
+            pedido = pedidos[0]  # Pega o primeiro (e provavelmente único) pedido
+            
+            # Buscar dados do produto para obter a imagem
+            produto_id = pedido.get('id_produto')
+            produto = None
+            if produto_id:
+                produto = self.product_api.consultar_produto_por_id(produto_id)
+            
+            # URL da imagem do produto ou imagem padrão
+            imagem_url = ""
+            if produto and produto.get('urlImagem'):
+                imagem_url = produto.get('urlImagem')
+            
+            # Criar hero card para o pedido
+            card = CardFactory.hero_card(
+                HeroCard(
+                    title=f"Pedido #{pedido.get('id', id_pedido)}",
+                    subtitle=f"Data: {pedido.get('data', 'N/A')} | Status: {pedido.get('status', 'N/A')}",
+                    text=f"""
+**Produto:** {pedido.get('produto', 'N/A')}
+**Valor:** R$ {pedido.get('valor', 0):.2f}
+**Cliente:** {pedido.get('cliente', 'N/A')}
+                    """,
+                    images=[CardImage(url=imagem_url)] if imagem_url else []
+                )
+            )
+            
+            await step_context.context.send_activity(MessageFactory.attachment(card))
+            
         else:
+            # Mensagem simples para pedido não encontrado
             await step_context.context.send_activity(
-                MessageFactory.text(f"Nenhum pedido encontrado para o usuário '{user_name}'.", None, "markdown")
-        )
-        return await step_context.end_dialog()
+                MessageFactory.text(f"Pedido não encontrado.")
+            )
+
+        # Voltar diretamente ao menu principal
+        return await step_context.replace_dialog("WaterfallDialog")
