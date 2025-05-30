@@ -168,15 +168,12 @@ class ComprarProdutoDialog(ComponentDialog):
                 return await step_context.replace_dialog("WaterfallDialog")
             
             print(f"Tentando criar pedido para cliente: {nome_cliente}, produto: {nome_produto}, valor: {valor_produto}")
-            resultado_pedido = order_api.criar_pedido(product_id, nome_cliente, valor_produto)
+            resultado_pedido = order_api.criar_pedido(product_id, nome_cliente, nome_produto, valor_produto)
             print(f"Resultado da criação do pedido: {resultado_pedido}")
             
             if not resultado_pedido:
                 await step_context.context.send_activity(
-                    MessageFactory.text("⚠️ Pagamento autorizado, mas houve erro ao registrar o pedido. Verifique se a API está rodando e tente novamente.")
-                )
-                await step_context.context.send_activity(
-                    MessageFactory.text("💡 Dica: Verifique se a aplicação Flask está rodando na porta 8000.")
+                    MessageFactory.text("Erro ao registrar o pedido.")
                 )
                 return await step_context.replace_dialog("WaterfallDialog")
             

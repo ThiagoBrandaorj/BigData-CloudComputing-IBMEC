@@ -11,7 +11,13 @@ class OrderAPI:
             url = f"{CONFIG.API_BASE_URL}/pedido/nome/{nome_cliente}"
             print(f"Consultando API: {url}")
             
-            response = requests.get(url)
+            headers = {
+                'User-Agent': 'IBMEC-Bot/1.0',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+            
+            response = requests.get(url, headers=headers, timeout=30)
             print(f"Status code: {response.status_code}")
             
             if response.status_code == 200:
@@ -30,7 +36,13 @@ class OrderAPI:
             url = f"{CONFIG.API_BASE_URL}/pedido/{id_pedido}"
             print(f"Consultando API: {url}")
             
-            response = requests.get(url)
+            headers = {
+                'User-Agent': 'IBMEC-Bot/1.0',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+            
+            response = requests.get(url, headers=headers, timeout=30)
             print(f"Status code: {response.status_code}")
             
             if response.status_code == 200:
@@ -44,21 +56,27 @@ class OrderAPI:
             print(f"Exceção ao consultar a API de Pedidos: {e}")
             return None
 
-    def criar_pedido(self, id_produto, nome_cliente, valor_total):
+    def criar_pedido(self, id_produto, nome_cliente, nome_produto, valor_total):
         try:
             url = f"{CONFIG.API_BASE_URL}/pedido/"
             data = {
                 "id_produto": id_produto,
-                "cliente": nome_cliente,
-                "produto": "Nome do Produto",  # Este valor será sobrescrito pelo backend
-                "valor": valor_total,
+                "nome_cliente": nome_cliente,
+                "nome_produto": nome_produto,
+                "valor_total": valor_total,
                 "data_pedido": datetime.now().strftime("%Y-%m-%d"),
                 "status": "Confirmado"
             }
             
+            headers = {
+                'User-Agent': 'IBMEC-Bot/1.0',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+            
             print(f"Criando pedido: {json.dumps(data, indent=2)}")
             
-            response = requests.post(url, json=data)
+            response = requests.post(url, json=data, headers=headers, timeout=30)
             print(f"Status code: {response.status_code}")
             print(f"Response text: {response.text}")
             
@@ -89,9 +107,15 @@ class OrderAPI:
                 "valor": valor
             }
             
+            headers = {
+                'User-Agent': 'IBMEC-Bot/1.0',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+            
             print(f"Autorizando transação: {json.dumps(data, indent=2)}")
             
-            response = requests.post(url, json=data)
+            response = requests.post(url, json=data, headers=headers, timeout=30)
             print(f"Status code: {response.status_code}")
             
             if response.status_code == 200:

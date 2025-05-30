@@ -1,5 +1,6 @@
 import requests
 import json
+from urllib.parse import quote
 from config import DefaultConfig
 
 CONFIG = DefaultConfig()
@@ -7,10 +8,19 @@ CONFIG = DefaultConfig()
 class ProductAPI:
     def consultar_produtos(self, product_name):
         try:
-            url = f"{CONFIG.API_BASE_URL}/produto/nome/{product_name}"
+            # Fazer URL encoding do nome do produto para tratar espaços e acentos
+            encoded_name = quote(product_name, safe='')
+            url = f"{CONFIG.API_BASE_URL}/produto/nome/{encoded_name}"
             print(f"Consultando API: {url}")
             
-            response = requests.get(url)
+            # Adicionar headers apropriados
+            headers = {
+                'User-Agent': 'IBMEC-Bot/1.0',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+            
+            response = requests.get(url, headers=headers, timeout=30)
             print(f"Status code: {response.status_code}")
             
             if response.status_code == 200:
@@ -29,7 +39,14 @@ class ProductAPI:
             url = f"{CONFIG.API_BASE_URL}/produto/{product_id}"
             print(f"Consultando produto por ID: {url}")
             
-            response = requests.get(url)
+            # Adicionar headers apropriados
+            headers = {
+                'User-Agent': 'IBMEC-Bot/1.0',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+            
+            response = requests.get(url, headers=headers, timeout=30)
             print(f"Status code: {response.status_code}")
             
             if response.status_code == 200:
