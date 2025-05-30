@@ -211,4 +211,37 @@ def listar_cartoes_usuario(id_user):
             
     except Exception as e:
         return jsonify({"erro": "Erro ao listar cartões"}), 500
+    
+# buscando cartão pelo número
+@cartao_bp.route("/numero/<string:numero_cartao>", methods=["GET"])
+def get_cartao_by_numero(numero_cartao):
+    try:
+        # Buscar cartão pelo número
+        cartao = Cartao.query.filter_by(numero=numero_cartao).first()
+        
+        if not cartao:
+            return jsonify({"erro": "Cartão não encontrado"}), 404
+        
+        # Formatar a data de validade
+        mes = cartao.validade.month
+        ano = cartao.validade.year
+        validade_formatada = f"{mes:02d}/{ano}"
+        
+        # Montar a resposta
+        resposta = {
+            "id": cartao.id,
+            "usuario_id": cartao.usuario_id,
+            "numero": cartao.numero,
+            "nome_impresso": cartao.nome_impresso,
+            "validade": validade_formatada,
+            "cvv": cartao.cvv,
+            "bandeira": cartao.bandeira,
+            "tipo": cartao.tipo,
+            "saldo": float(cartao.saldo)
+        }
+        
+        return jsonify(resposta), 200
+        
+    except Exception as e:
+        return jsonify({"erro": "Erro ao buscar cartão", "detalhes": str(e)}), 500
 
