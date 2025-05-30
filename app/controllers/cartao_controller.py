@@ -24,20 +24,16 @@ def create_cartao(id_user):
         if not usuario:
             return jsonify({"erro": "Usuário não encontrado"}), 404
         
+        # Verificar se o usuário já possui algum cartão cadastrado
+        cartao_existente = Cartao.query.filter_by(usuario_id=id_user).first()
+        if cartao_existente:
+            return jsonify({"erro": "Usuário já possui um cartão cadastrado. Delete o cartão atual antes de cadastrar um novo."}), 400
+        
         # Validar campos obrigatórios
         campos_obrigatorios = ["numero", "nome_impresso", "validade", "cvv", "bandeira"]
         for campo in campos_obrigatorios:
             if not data.get(campo):
                 return jsonify({"erro": f"O campo '{campo}' é obrigatório"}), 400
-        
-        # Verificar se já existe um cartão com o mesmo número para este usuário
-        cartao_existente = Cartao.query.filter_by(
-            usuario_id=id_user,
-            numero=data["numero"]
-        ).first()
-        
-        if cartao_existente:
-            return jsonify({"erro": "Já existe um cartão cadastrado com este número para este usuário"}), 400
         
         mes, ano = map(int, data["validade"].split("/"))
         validade = datetime(ano, mes, 1) + relativedelta(day=31)

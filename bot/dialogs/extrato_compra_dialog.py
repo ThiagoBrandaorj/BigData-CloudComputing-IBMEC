@@ -1,6 +1,5 @@
 from botbuilder.dialogs import ComponentDialog, WaterfallDialog, WaterfallStepContext
 from botbuilder.core import MessageFactory
-
 class ExtratoCompraDialog(ComponentDialog):
     def __init__(self):
         super(ExtratoCompraDialog, self).__init__("ExtratoCompraDialog")
