@@ -8,9 +8,8 @@ class CartaoAPI():
     def consultar_cartao_por_numero(self,card_number):
         try:
             url = f"{CONFIG.API_BASE_URL}/cartao/numero/{card_number}"
-            print(f"Consultando cartão pelo número: {card_number}")
 
-                        # Adicionar headers apropriados
+            # Adicionar headers apropriados
             headers = {
                 'User-Agent': 'IBMEC-Bot/1.0',
                 'Accept': 'application/json',
@@ -21,8 +20,8 @@ class CartaoAPI():
             print(f"Status code: {response.status_code}")
 
             if response.status_code == 200:
-                result = response.json
-                print(f"Cartão encontrado: {json.dumps(result, indent=2)}")
+                result = response.json()
+                print(f"Cartão encontrado...")
                 return result
             else:
                 print(f"Erro na API: {response.text}")
