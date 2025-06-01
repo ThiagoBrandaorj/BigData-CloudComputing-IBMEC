@@ -1,6 +1,6 @@
 # Projeto E-commerce IBMEC - Cloud Computing
 
-API de e-commerce desenvolvida para a disciplina de Big Data e Cloud Computing do IBMEC.
+Sistema de e-commerce completo desenvolvido para a disciplina de Big Data e Cloud Computing do IBMEC, composto por uma **API RESTful** e um **Chatbot Inteligente** para interação com clientes.
 
 ## Grupo
 - Guilherme Duran Duran Gea
@@ -9,17 +9,57 @@ API de e-commerce desenvolvida para a disciplina de Big Data e Cloud Computing d
 
 ## Arquitetura
 
-A aplicação utiliza uma arquitetura híbrida de armazenamento:
+A aplicação utiliza uma arquitetura híbrida moderna com múltiplas tecnologias:
 
-- **MySQL** (Azure Database for MySQL): Armazena dados relacionais como usuários, endereços e cartões.
+### **Backend & Armazenamento:**
+- **MySQL** (Azure Database for MySQL): Armazena dados relacionais como usuários, endereços, cartões e pedidos.
 - **Azure Cosmos DB**: Armazena dados de produtos, aproveitando a escalabilidade e flexibilidade para catálogos de produtos.
 - **Azure App Service**: Hospeda a API RESTful baseada em Flask que gerencia todas as operações.
 
-## URL Base da API
+### **Interface Conversacional:**
+- **Microsoft Bot Framework**: Chatbot inteligente que permite aos clientes:
+  - 🛍️ **Consultar produtos** por nome
+  - 💳 **Realizar compras** com validação completa de cartão
+  - 📋 **Consultar extratos** de pedidos realizados
+  - 🔍 **Consultar pedidos específicos** por ID
 
+## URLs do Sistema
+
+### **API RESTful:**
 ```
 https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsites.net
 ```
+
+### **Chatbot (Local - Bot Framework Emulator):**
+```
+http://localhost:3979/api/messages
+```
+
+**Para testar o chatbot:**
+1. Baixe o [Bot Framework Emulator](https://github.com/Microsoft/BotFramework-Emulator/releases)
+2. Execute o bot localmente: `python bot/app.py`
+3. No emulator, conecte-se ao endpoint: `http://localhost:3979/api/messages`
+4. Comece a conversar! Digite "Olá" para ver o menu principal
+
+## Funcionalidades do Chatbot
+
+O bot oferece uma **interface conversacional completa** para o e-commerce:
+
+### **🎯 Menu Principal:**
+- **Consultar Produtos**: Busque produtos por nome
+- **Comprar Produto**: Processo completo de compra com validação
+- **Extrato de Compras**: Consulte histórico de pedidos
+
+### **🛍️ Processo de Compra:**
+1. **Autenticação por CPF** (validação completa)
+2. **Validação do cartão** (número, nome, validade, CVV)
+3. **Autorização da transação** 
+4. **Criação do pedido** com confirmação
+
+### **💳 Extrato Bancário:**
+1. **Validação completa do cartão** (como um banco real)
+2. **Histórico de pedidos** com imagens dos produtos
+3. **Resumo financeiro** total
 
 ## Endpoints da API
 
@@ -60,9 +100,9 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
 }
 ```
 
-### Obter Usuários
+### Buscar Usuário por CPF
 - **Método**: GET
-- **Endpoint**: `/usuario`
+- **Endpoint**: `/usuario/cpf/{cpf}`
 - **Resposta de Sucesso**:
 ```json
 {
@@ -71,14 +111,30 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
     "email": "joao@exemplo.com",
     "cpf": "12345678900",
     "telefone": "11987654321"
-},
-{
-    "id": 2,
-    "nome": "Maria Silva",
-    "email": "maria@exemplo.com",
-    "cpf": "12345678900",
-    "telefone": "11987654321"
 }
+```
+
+### Obter Usuários
+- **Método**: GET
+- **Endpoint**: `/usuario`
+- **Resposta de Sucesso**:
+```json
+[
+    {
+        "id": 1,
+        "nome": "João Silva",
+        "email": "joao@exemplo.com",
+        "cpf": "12345678900",
+        "telefone": "11987654321"
+    },
+    {
+        "id": 2,
+        "nome": "Maria Silva",
+        "email": "maria@exemplo.com",
+        "cpf": "12345678900",
+        "telefone": "11987654321"
+    }
+]
 ```
 
 ### Atualizar Usuário
@@ -209,6 +265,23 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
 }
 ```
 
+### Consultar Cartão por Número
+- **Método**: GET
+- **Endpoint**: `/cartao/numero/{numero}`
+- **Resposta de Sucesso**:
+```json
+{
+    "id": 1,
+    "numero": "5555666677778888",
+    "nome_impresso": "JOAO SILVA",
+    "validade": "12/2026",
+    "bandeira": "mastercard",
+    "tipo": "credito",
+    "saldo": 5000.00,
+    "usuario_id": 1
+}
+```
+
 ### Autorizar Transação
 - **Método**: POST
 - **Endpoint**: `/cartao/authorize/usuario/{id_user}`
@@ -297,6 +370,21 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
 }
 ```
 
+### Buscar Produtos por Nome
+- **Método**: GET
+- **Endpoint**: `/produto/buscar/{nome}`
+- **Resposta de Sucesso**:
+```json
+{
+    "id": "8f9d2a3b-6c87-4f1d-9a5b-2e7d1c8a6b3f",
+    "produtoCategoria": "eletronicos", 
+    "nome": "Smartphone Galaxy S21",
+    "preco": 3999.99,
+    "urlImagem": "https://exemplo.com/imagens/galaxy-s21.jpg",
+    "descricao": "Smartphone Samsung Galaxy S21 com 128GB de armazenamento e 8GB de RAM"
+}
+```
+
 ### Obter Produtos 
 - **Método**: GET
 - **Endpoint**: `/produto`
@@ -350,11 +438,121 @@ https://ibmec-ecommerce-produtos-thpedu-hpgdamgyc3c4grgx.centralus-01.azurewebsi
 }
 ```
 
+## Pedidos
+
+### Criar Pedido
+- **Método**: POST
+- **Endpoint**: `/pedido`
+- **Corpo da Requisição**:
+```json
+{
+    "id_produto": "8f9d2a3b-6c87-4f1d-9a5b-2e7d1c8a6b3f",
+    "id_usuario": 1,
+    "id_cartao": 1,
+    "valor_total": 3999.99,
+    "data_pedido": "2024-01-15",
+    "status": "Confirmado"
+}
+```
+- **Resposta de Sucesso**:
+```json
+{
+    "mensagem": "Pedido criado com sucesso",
+    "id_pedido": 1
+}
+```
+
+### Obter Todos os Pedidos
+- **Método**: GET
+- **Endpoint**: `/pedido`
+- **Resposta de Sucesso**:
+```json
+[
+    {
+        "id": 1,
+        "cliente": "João Silva",
+        "produto": "Smartphone Galaxy S21",
+        "id_produto": "8f9d2a3b-6c87-4f1d-9a5b-2e7d1c8a6b3f",
+        "id_cartao": 1,
+        "id_usuario": 1,
+        "data": "15/01/2024",
+        "valor": 3999.99,
+        "status": "Confirmado"
+    }
+]
+```
+
+### Obter Pedido por ID
+- **Método**: GET
+- **Endpoint**: `/pedido/{id_pedido}`
+- **Resposta de Sucesso**:
+```json
+{
+    "id": 1,
+    "cliente": "João Silva",
+    "produto": "Smartphone Galaxy S21",
+    "id_produto": "8f9d2a3b-6c87-4f1d-9a5b-2e7d1c8a6b3f",
+    "id_cartao": 1,
+    "id_usuario": 1,
+    "data": "15/01/2024",
+    "valor": 3999.99,
+    "status": "Confirmado"
+}
+```
+
+### Buscar Pedidos por Nome do Cliente
+- **Método**: GET
+- **Endpoint**: `/pedido/nome/{nome_cliente}`
+- **Resposta de Sucesso**:
+```json
+[
+    {
+        "id": 1,
+        "cliente": "João Silva",
+        "produto": "Smartphone Galaxy S21",
+        "id_produto": "8f9d2a3b-6c87-4f1d-9a5b-2e7d1c8a6b3f",
+        "id_cartao": 1,
+        "id_usuario": 1,
+        "data": "15/01/2024",
+        "valor": 3999.99,
+        "status": "Confirmado"
+    }
+]
+```
+
+### Atualizar Pedido
+- **Método**: PUT
+- **Endpoint**: `/pedido/{id_pedido}`
+- **Corpo da Requisição**:
+```json
+{
+    "status": "Entregue",
+    "valor_total": 4199.99
+}
+```
+- **Resposta de Sucesso**:
+```json
+{
+    "mensagem": "Pedido atualizado"
+}
+```
+
+### Deletar Pedido
+- **Método**: DELETE
+- **Endpoint**: `/pedido/{id_pedido}`
+- **Resposta de Sucesso**:
+```json
+{
+    "mensagem": "Pedido deletado"
+}
+```
+
 ## Configuração do Ambiente de Desenvolvimento
 
+### **API Flask:**
 1. Clone o repositório
 2. Instale as dependências:
-```
+```bash
 pip install -r requirements.txt
 ```
 3. Configure as variáveis de ambiente:
@@ -364,17 +562,55 @@ pip install -r requirements.txt
    - `AZURE_COSMOS_DATABASE`: Nome do banco de dados no Cosmos DB
 
 4. Execute a aplicação:
-```
+```bash
 python run.py
 ```
 
+### **Chatbot:**
+1. Instale as dependências do bot:
+```bash
+pip install -r bot/requirements.txt
+```
+2. Execute o bot:
+```bash
+cd bot
+python app.py
+```
+3. Abra o Bot Framework Emulator
+4. Conecte-se ao endpoint: `http://localhost:3979/api/messages`
+
 ## Estrutura do Projeto
 
-- `app/`: Pacote principal da aplicação
-  - `models/`: Modelos de dados
-  - `controllers/`: Controladores de rotas
+- `app/`: Pacote principal da aplicação Flask
+  - `models/`: Modelos de dados (Usuario, Cartao, Pedido, etc.)
+  - `controllers/`: Controladores de rotas (usuario, cartao, pedido, produto)
   - `request/`: Objetos de requisição para validação de dados
   - `response/`: Objetos de resposta
   - `config.py`: Configurações da aplicação
   - `database.py`: Configuração do banco de dados SQL
-  - `cosmosdb.py`: Configuração do Azure Cosmos DB 
+  - `cosmosdb.py`: Configuração do Azure Cosmos DB
+
+- `bot/`: Chatbot Microsoft Bot Framework
+  - `dialogs/`: Dialogs conversacionais (compra, consulta, extrato)
+  - `api/`: Clientes API para comunicação com o backend
+  - `bots/`: Lógica principal do bot
+  - `config.py`: Configurações do bot
+  - `app.py`: Servidor do bot
+
+## Tecnologias Utilizadas
+
+### **Backend:**
+- **Flask** (API RESTful)
+- **SQLAlchemy** (ORM)
+- **Azure MySQL** (Dados relacionais)
+- **Azure Cosmos DB** (Dados de produtos)
+
+### **Chatbot:**
+- **Microsoft Bot Framework** (Python)
+- **Adaptive Cards** (Interface rica)
+- **Dialog System** (Fluxos conversacionais)
+
+### **Cloud:**
+- **Azure App Service** (Hospedagem da API)
+- **Azure Database for MySQL** (Banco relacional)
+- **Azure Cosmos DB** (Banco NoSQL)
