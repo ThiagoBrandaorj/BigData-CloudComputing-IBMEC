@@ -309,7 +309,7 @@ class ComprarProdutoDialog(ComponentDialog):
         except Exception as e:
             print(f"Erro no processamento da compra: {e}")
             await step_context.context.send_activity(
-                MessageFactory.text("Ocorreu um erro inesperado. Tente novamente mais tarde.")
+                MessageFactory.text("Ocorreu um erro inesperado. Tente novamente mais tarde. ")
             )
         
         return await step_context.replace_dialog("WaterfallDialog")
