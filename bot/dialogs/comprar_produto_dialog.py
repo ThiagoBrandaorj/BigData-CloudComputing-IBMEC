@@ -12,13 +12,16 @@ import re
 from datetime import datetime, date
 from api.product_api import ProductAPI
 from api.order_api import OrderAPI
+from api.usuario_api import UsuarioAPI
+from api.cartao_api import CartaoAPI
 
 class ComprarProdutoDialog(ComponentDialog):
     def __init__(self, user_state: UserState):
         super(ComprarProdutoDialog, self).__init__("ComprarProdutoDialog")
 
-        self.add_dialog(TextPrompt("nomeClientePrompt"))
+        self.add_dialog(TextPrompt("cpfClientePrompt"))
         self.add_dialog(TextPrompt("numeroCartaoCreditoPrompt"))
+        self.add_dialog(TextPrompt("nomeImpressoPrompt"))
         self.add_dialog(TextPrompt("dataExpiracaoPrompt"))
         self.add_dialog(TextPrompt("cvvPrompt"))
 
@@ -26,8 +29,9 @@ class ComprarProdutoDialog(ComponentDialog):
             WaterfallDialog(
                 "comprarProdutoWaterfall",
                 [
-                    self.nome_cliente_step,
+                    self.cpf_cliente_step,
                     self.numero_cartao_step,
+                    self.nome_impresso_step,
                     self.data_expiracao_step,
                     self.cvv_step,
                     self.processar_compra_step
@@ -37,30 +41,49 @@ class ComprarProdutoDialog(ComponentDialog):
 
         self.initial_dialog_id = "comprarProdutoWaterfall"
 
-    async def nome_cliente_step(self, step_context: WaterfallStepContext):
+    async def cpf_cliente_step(self, step_context: WaterfallStepContext):
         product_id = step_context.options.get("productId")
         step_context.values["productId"] = product_id
         
-        prompt_message = MessageFactory.text("Para finalizar a compra, preciso do seu nome completo:")
+        prompt_message = MessageFactory.text("Para finalizar a compra, preciso do seu CPF:")
         
         prompt_options = PromptOptions(
             prompt=prompt_message,
-            retry_prompt=MessageFactory.text("Por favor, digite seu nome completo.")
+            retry_prompt=MessageFactory.text("Por favor, digite seu CPF (formato: 000.000.000-00 ou apenas números).")
         )
         
-        return await step_context.prompt("nomeClientePrompt", prompt_options)
+        return await step_context.prompt("cpfClientePrompt", prompt_options)
 
     async def numero_cartao_step(self, step_context: WaterfallStepContext):
-        nome_cliente = step_context.result.strip()
+        cpf_cliente = step_context.result.strip()
         
-        # Validar nome (pelo menos 2 palavras)
-        if len(nome_cliente.split()) < 2:
+        # Validar CPF
+        usuario_api = UsuarioAPI()
+        if not usuario_api.validar_cpf(cpf_cliente):
             await step_context.context.send_activity(
-                MessageFactory.text("Por favor, digite seu nome completo (nome e sobrenome).")
+                MessageFactory.text("CPF inválido. Por favor, digite um CPF válido.")
             )
             return await step_context.replace_dialog("comprarProdutoWaterfall", step_context.options)
         
-        step_context.values["nome_cliente"] = nome_cliente
+        # Buscar usuário pelo CPF
+        usuario = usuario_api.buscar_usuario_por_cpf(cpf_cliente)
+        
+        if not usuario:
+            await step_context.context.send_activity(
+                MessageFactory.text(f"CPF não encontrado no sistema. Verifique se o CPF está correto ou entre em contato conosco para cadastro.")
+            )
+            return await step_context.replace_dialog("comprarProdutoWaterfall", step_context.options)
+        
+        # Armazenar informações do usuário
+        step_context.values["cpf_cliente"] = cpf_cliente
+        step_context.values["usuario_id"] = usuario.get("id")
+        step_context.values["usuario_nome"] = usuario.get("nome")
+        step_context.values["nome_cliente"] = usuario.get("nome")  # Para compatibilidade com o resto do código
+        
+        # Confirmar usuário encontrado
+        await step_context.context.send_activity(
+            MessageFactory.text(f"Seja bem-vindo(a) {usuario.get('nome')}!")
+        )
         
         prompt_message = MessageFactory.text("Digite o número do seu cartão de crédito (16 dígitos):")
         
@@ -71,7 +94,7 @@ class ComprarProdutoDialog(ComponentDialog):
         
         return await step_context.prompt("numeroCartaoCreditoPrompt", prompt_options)
 
-    async def data_expiracao_step(self, step_context: WaterfallStepContext):
+    async def nome_impresso_step(self, step_context: WaterfallStepContext):
         numero_cartao = step_context.result.strip().replace(" ", "")
         
         # Validar número do cartão
@@ -82,6 +105,59 @@ class ComprarProdutoDialog(ComponentDialog):
             return await step_context.replace_dialog("comprarProdutoWaterfall", step_context.options)
         
         step_context.values["numero_cartao"] = numero_cartao
+        
+        prompt_message = MessageFactory.text("Digite o nome impresso no cartão:")
+        
+        prompt_options = PromptOptions(
+            prompt=prompt_message,
+            retry_prompt=MessageFactory.text("Por favor, digite o nome exatamente como aparece no cartão.")
+        )
+        
+        return await step_context.prompt("nomeImpressoPrompt", prompt_options)
+
+    async def data_expiracao_step(self, step_context: WaterfallStepContext):
+        nome_impresso = step_context.result.strip()
+        numero_cartao = step_context.values["numero_cartao"]
+        
+        # Validar nome impresso (pelo menos 2 palavras)
+        if len(nome_impresso.split()) < 2:
+            await step_context.context.send_activity(
+                MessageFactory.text("Por favor, digite o nome completo como aparece no cartão.")
+            )
+            return await step_context.replace_dialog("comprarProdutoWaterfall", step_context.options)
+        
+        # Buscar o cartão para verificar se o nome impresso confere
+        cartao_api = CartaoAPI()
+        cartao_cadastrado = cartao_api.consultar_cartao_por_numero(numero_cartao)
+        
+        if cartao_cadastrado:
+            nome_cadastrado = cartao_cadastrado.get('nome_impresso', '').strip()
+            
+            # Comparar nomes (case insensitive e removendo espaços extras)
+            nome_fornecido_limpo = ' '.join(nome_impresso.lower().split())
+            nome_cadastrado_limpo = ' '.join(nome_cadastrado.lower().split())
+            
+            if nome_fornecido_limpo != nome_cadastrado_limpo:
+                await step_context.context.send_activity(
+                    MessageFactory.text("O nome impresso no cartão não confere com os dados cadastrados. Verifique e tente novamente.")
+                )
+                return await step_context.replace_dialog("comprarProdutoWaterfall", step_context.options)
+            
+            # Verificar se o cartão pertence ao usuário
+            usuario_id = step_context.values["usuario_id"]
+            if cartao_cadastrado.get('usuario_id') != usuario_id:
+                await step_context.context.send_activity(
+                    MessageFactory.text("Este cartão não pertence ao usuário informado.")
+                )
+                return await step_context.replace_dialog("comprarProdutoWaterfall", step_context.options)
+            
+        else:
+            await step_context.context.send_activity(
+                MessageFactory.text("Cartão não encontrado no sistema. Verifique o número e tente novamente.")
+            )
+            return await step_context.replace_dialog("comprarProdutoWaterfall", step_context.options)
+        
+        step_context.values["nome_impresso"] = nome_impresso
         
         prompt_message = MessageFactory.text("Digite a data de validade do cartão (formato MM/AAAA):")
         
@@ -126,6 +202,7 @@ class ComprarProdutoDialog(ComponentDialog):
         
         product_id = step_context.values["productId"]
         nome_cliente = step_context.values["nome_cliente"]
+        usuario_id = step_context.values["usuario_id"]
         numero_cartao = step_context.values["numero_cartao"]
         data_expiracao = step_context.values["data_expiracao"]
         
@@ -147,17 +224,37 @@ class ComprarProdutoDialog(ComponentDialog):
             if isinstance(produto, dict):
                 valor_produto = produto["preco"]
                 nome_produto = produto["nome"]
+                produto_id = produto.get("id", product_id)  # ID obrigatório do produto
             else:
                 await step_context.context.send_activity(
                     MessageFactory.text("Erro: Não foi possível obter informações do produto.")
                 )
                 return await step_context.replace_dialog("WaterfallDialog")
             
+            # 2. Buscar dados do cartão para obter o ID obrigatório
+            cartao_api = CartaoAPI()
+            cartao_dados = cartao_api.consultar_cartao_por_numero(numero_cartao)
+            
+            if not cartao_dados or not isinstance(cartao_dados, dict):
+                await step_context.context.send_activity(
+                    MessageFactory.text("Erro: Não foi possível obter dados do cartão. Tente novamente.")
+                )
+                return await step_context.replace_dialog("WaterfallDialog")
+            
+            cartao_id = cartao_dados.get("id")
+            if not cartao_id:
+                await step_context.context.send_activity(
+                    MessageFactory.text("Erro: ID do cartão não encontrado. Tente novamente.")
+                )
+                return await step_context.replace_dialog("WaterfallDialog")
+            
+            print(f"IDs obrigatórios - Produto: {produto_id}, Cartão: {cartao_id}")
+            
+            # 3. Autorizar transação usando o ID do usuário encontrado
             order_api = OrderAPI()
-            id_usuario = 1
             
             resultado_transacao = order_api.autorizar_transacao(
-                id_usuario, numero_cartao, data_expiracao, cvv, valor_produto
+                usuario_id, numero_cartao, data_expiracao, cvv, valor_produto
             )
             
             if not resultado_transacao or resultado_transacao.get("status") != "AUTHORIZED":
@@ -167,8 +264,19 @@ class ComprarProdutoDialog(ComponentDialog):
                 )
                 return await step_context.replace_dialog("WaterfallDialog")
             
-            print(f"Tentando criar pedido para cliente: {nome_cliente}, produto: {nome_produto}, valor: {valor_produto}")
-            resultado_pedido = order_api.criar_pedido(product_id, nome_cliente, nome_produto, valor_produto)
+            # 4. Criar pedido com IDs obrigatórios do produto e cartão
+            print(f"Criando pedido com dados obrigatórios:")
+            print(f"- Cliente ID: {usuario_id}")
+            print(f"- Produto ID: {produto_id} ({nome_produto})")
+            print(f"- Cartão ID: {cartao_id}")
+            print(f"- Valor: {valor_produto}")
+            
+            resultado_pedido = order_api.criar_pedido(
+                id_produto=produto_id, 
+                id_usuario=usuario_id,  # Usa ID do usuário ao invés do nome
+                valor_total=valor_produto,
+                id_cartao=cartao_id
+            )
             print(f"Resultado da criação do pedido: {resultado_pedido}")
             
             if not resultado_pedido:
@@ -177,7 +285,7 @@ class ComprarProdutoDialog(ComponentDialog):
                 )
                 return await step_context.replace_dialog("WaterfallDialog")
             
-            # 4. Sucesso!
+            # 5. Sucesso!
             codigo_autorizacao = resultado_transacao.get("codigo_autorizacao", "N/A")
             id_pedido = resultado_pedido.get("id_pedido", "N/A")
             data_compra = datetime.now().strftime("%d/%m/%Y às %H:%M")
@@ -187,13 +295,11 @@ class ComprarProdutoDialog(ComponentDialog):
                 HeroCard(
                     title="✅ Compra Realizada com Sucesso!",
                     subtitle=f"Comprovante de Compra - {data_compra}",
-                    text=f"""
-**Produto:** {nome_produto}
-**Valor:** R$ {valor_produto:.2f}
-**Pedido:** #{id_pedido}
-**Autorização:** {str(codigo_autorizacao)}
-**Cliente:** {nome_cliente}
-                    """
+                    text=f"**Produto:** {nome_produto}\n\n"
+                         f"**Valor:** R$ {valor_produto:.2f}\n\n"
+                         f"**Pedido:** #{id_pedido}\n\n"
+                         f"**Autorização:** {str(codigo_autorizacao)}\n\n"
+                         f"**Cliente:** {nome_cliente}"
                 )
             )
             

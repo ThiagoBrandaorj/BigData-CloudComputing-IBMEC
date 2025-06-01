@@ -22,16 +22,16 @@ class OrderAPI:
             
             if response.status_code == 200:
                 result = response.json()
-                print(f"Resposta da API: {json.dumps(result, indent=2, ensure_ascii=False)}")
+                print(f"Pedidos encontrados: {len(result)}")
                 return result
             else:
                 print(f"Erro na API: {response.text}")
-                return None
+                return []
         except Exception as e:
-            print(f"Exceção ao consultar a API de Pedidos: {e}")
-            return None
+            print(f"Exceção ao consultar pedidos: {e}")
+            return []
 
-    def consultar_pedidos_por_id_pedido(self, id_pedido):
+    def consultar_pedidos_por_id(self, id_pedido):
         try:
             url = f"{CONFIG.API_BASE_URL}/pedido/{id_pedido}"
             print(f"Consultando API: {url}")
@@ -43,27 +43,27 @@ class OrderAPI:
             }
             
             response = requests.get(url, headers=headers, timeout=30)
-            print(f"Status code: {response.status_code}")
+            print(f"Status code consulta ID: {response.status_code}")
             
             if response.status_code == 200:
                 result = response.json()
-                print(f"Resposta da API: {json.dumps(result, indent=2, ensure_ascii=False)}")
-                return [result]  # Retornando como lista para compatibilidade
+                print(f"Pedido encontrado por ID...")
+                return result
             else:
-                print(f"Erro na API: {response.text}")
+                print(f"Erro ao consultar por ID: {response.text}")
                 return None
         except Exception as e:
-            print(f"Exceção ao consultar a API de Pedidos: {e}")
+            print(f"Exceção ao consultar pedido por ID: {e}")
             return None
 
-    def criar_pedido(self, id_produto, nome_cliente, nome_produto, valor_total):
+    def criar_pedido(self, id_produto, id_usuario, valor_total, id_cartao):
         try:
             url = f"{CONFIG.API_BASE_URL}/pedido/"
             data = {
                 "id_produto": id_produto,
-                "nome_cliente": nome_cliente,
-                "nome_produto": nome_produto,
+                "id_usuario": id_usuario,
                 "valor_total": valor_total,
+                "id_cartao": id_cartao,
                 "data_pedido": datetime.now().strftime("%Y-%m-%d"),
                 "status": "Confirmado"
             }
