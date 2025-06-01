@@ -78,16 +78,60 @@ class ConsultarProdutoDialog(ComponentDialog):
 
         else:
             await step_context.context.send_activity(
-                MessageFactory.text(f"Nenhum produto encontrado com o nome '{product_name}'")
+                MessageFactory.text(f"Nenhum produto encontrado com o nome '{product_name}'.")
             )
-            return await step_context.replace_dialog(self.initial_dialog_id)
+            
+            # Oferecer opções ao usuário com choices mais claras
+            choices = [
+                Choice("Tentar novamente"),
+                Choice("Voltar ao menu principal")
+            ]
+            
+            return await step_context.prompt(
+                ChoicePrompt.__name__,
+                PromptOptions(
+                    prompt=MessageFactory.text("O que você gostaria de fazer? Digite 1 ou 2:"),
+                    choices=choices,
+                    retry_prompt=MessageFactory.text("Por favor, escolha uma opção válida: 1 para Tentar novamente ou 2 para Voltar ao menu principal")
+                )
+            )
 
     async def processa_opcao_step(self, step_context: WaterfallStepContext):
-        # Capturar a ação dos botões do hero card
+        # Debug: mostrar o que foi recebido
+        print(f"Tipo do resultado: {type(step_context.result)}")
+        print(f"Valor do resultado: {step_context.result}")
+        
+        # Verificar se é uma escolha de texto (quando produto não foi encontrado)
+        if isinstance(step_context.result, str):
+            escolha = step_context.result.strip()
+            
+            # Aceitar tanto o texto quanto números
+            if escolha in ["Tentar novamente", "1"]:
+                # Reiniciar o dialog de consultar produto desde o início
+                return await step_context.replace_dialog("consultarProdutoWaterfallDialog")
+            elif escolha in ["Voltar ao menu principal", "2"]:
+                return await step_context.replace_dialog("WaterfallDialog")
+            else:
+                # Se não reconheceu a escolha, mostrar erro e voltar ao menu
+                await step_context.context.send_activity(
+                    MessageFactory.text("Opção não reconhecida. Voltando ao menu principal.")
+                )
+                return await step_context.replace_dialog("WaterfallDialog")
+        
+        # Verificar se é um objeto Choice (resultado do ChoicePrompt)
+        elif hasattr(step_context.result, 'value'):
+            escolha = step_context.result.value
+            
+            if escolha == "Tentar novamente":
+                return await step_context.replace_dialog("consultarProdutoWaterfallDialog")
+            elif escolha == "Voltar ao menu principal":
+                return await step_context.replace_dialog("WaterfallDialog")
+        
+        # Capturar a ação dos botões do hero card (quando produto foi encontrado)
         result_action = step_context.context.activity.value
         
         if result_action is None:
-            return await step_context.end_dialog()
+            return await step_context.replace_dialog("WaterfallDialog")
         
         acao = result_action.get("acao")
         
@@ -100,10 +144,10 @@ class ConsultarProdutoDialog(ComponentDialog):
                 await step_context.context.send_activity(
                     MessageFactory.text("Erro: ID do produto não encontrado.")
                 )
-                return await step_context.end_dialog()
+                return await step_context.replace_dialog("WaterfallDialog")
                 
         elif acao == "menu":
             return await step_context.replace_dialog("WaterfallDialog")
         
         # Fallback para casos inesperados
-        return await step_context.end_dialog()
+        return await step_context.replace_dialog("WaterfallDialog")
